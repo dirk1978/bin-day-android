@@ -1,8 +1,11 @@
 package uk.dirk1978.binday
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -49,6 +52,7 @@ private fun BinDayApp(viewModel: AppViewModel) {
   val context = LocalContext.current
   var editing by remember { mutableStateOf(false) }
   var notificationsAllowed by remember { mutableStateOf(Reminders.canNotify(context)) }
+  var exactAlarmsAllowed by remember { mutableStateOf(Reminders.canAlarmExactly(context)) }
 
   val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
     notificationsAllowed = granted
@@ -58,9 +62,11 @@ private fun BinDayApp(viewModel: AppViewModel) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
   }
 
-  // Coming back to the app: re-check the permission, and refresh if the cache is old.
+  // Coming back to the app (perhaps from Settings): re-check permissions, and
+  // refresh if the cache is old.
   LifecycleResumeEffect(Unit) {
     notificationsAllowed = Reminders.canNotify(context)
+    exactAlarmsAllowed = Reminders.canAlarmExactly(context)
     viewModel.refresh(ifStale = true)
     onPauseOrDispose {}
   }
@@ -84,9 +90,17 @@ private fun BinDayApp(viewModel: AppViewModel) {
       state = state,
       refreshing = refreshing,
       notificationsAllowed = notificationsAllowed,
+      exactAlarmsAllowed = exactAlarmsAllowed,
       onRefresh = { viewModel.refresh() },
       onSettings = { editing = true },
       onAllowNotifications = ::askForNotifications,
+      onAllowExactAlarms = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          context.startActivity(
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")),
+          )
+        }
+      },
     )
   }
 }

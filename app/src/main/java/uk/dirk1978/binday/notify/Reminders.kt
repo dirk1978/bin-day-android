@@ -32,8 +32,8 @@ import uk.dirk1978.binday.ui.BinArt
  *
  * The window runs from the chosen time on the evening before until 9am on
  * collection day, when the notification removes itself (setTimeoutAfter).
- * Alarms use setAndAllowWhileIdle, which needs no exact-alarm permission and
- * may run a few minutes late in Doze; fine for "put the bins out".
+ * Alarms are exact when the person has allowed "Alarms & reminders", and
+ * otherwise inexact (see [canAlarmExactly]).
  */
 object Reminders {
   const val CHANNEL_ID = "bin_night"
@@ -116,10 +116,23 @@ object Reminders {
     }
   }
 
+  /**
+   * Exact alarms need the "Alarms & reminders" special access, which Android
+   * 14+ leaves off for new installs. Without it the alarm is inexact and an
+   * idle phone may deliver it up to an hour late.
+   */
+  fun canAlarmExactly(context: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+      context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+
   private fun scheduleAlarm(context: Context, at: LocalDateTime) {
     val millis = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    context.getSystemService(AlarmManager::class.java)
-      .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, alarmIntent(context))
+    val alarms = context.getSystemService(AlarmManager::class.java)
+    if (canAlarmExactly(context)) {
+      alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, alarmIntent(context))
+    } else {
+      alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, alarmIntent(context))
+    }
   }
 
   private fun cancelAlarm(context: Context) =

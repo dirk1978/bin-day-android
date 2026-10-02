@@ -33,7 +33,8 @@ class ReminderReceiver : BroadcastReceiver() {
 
 /**
  * Alarms don't survive a reboot, and a clock or time zone change moves the
- * reminder, so re-sync on all of those (and after an app update).
+ * reminder, so re-sync on all of those, after an app update, and when exact
+ * alarms are allowed (so the pending alarm is re-set as an exact one).
  */
 class SystemEventsReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {

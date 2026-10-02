@@ -1,5 +1,6 @@
 package uk.dirk1978.binday.data
 
+import android.util.Log
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -16,6 +17,7 @@ class CouncilException(message: String, cause: Throwable? = null) : Exception(me
 
 /** The two council websites. Plain HttpURLConnection: three GET/POSTs don't need a client library. */
 object CouncilApi {
+  private const val TAG = "BinDay"
   private const val USER_AGENT = "BinDay-Android/1.0 (personal bin collection reminder)"
   private const val TIMEOUT_MS = 30_000
 
@@ -56,6 +58,7 @@ object CouncilApi {
       if (status !in 200..299) throw CouncilException("The council's site returned $status.")
       connection.inputStream.bufferedReader().use { it.readText() }
     } catch (e: IOException) {
+      Log.w(TAG, "Request to $url failed", e)
       throw CouncilException("Couldn't reach the council's site. Check your connection.", e)
     } finally {
       connection.disconnect()

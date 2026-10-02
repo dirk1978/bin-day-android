@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -80,8 +81,10 @@ fun SetupScreen(initial: Settings?, onSave: (Settings) -> Unit, onCancel: (() ->
   var busy by remember { mutableStateOf(false) }
   var error by remember { mutableStateOf<String?>(null) }
   var showTimePicker by remember { mutableStateOf(false) }
+  val keyboard = LocalSoftwareKeyboardController.current
 
   fun find() {
+    keyboard?.hide()
     error = null
     busy = true
     scope.launch {

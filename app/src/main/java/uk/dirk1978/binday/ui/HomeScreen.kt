@@ -54,9 +54,11 @@ fun HomeScreen(
   state: HomeState,
   refreshing: Boolean,
   notificationsAllowed: Boolean,
+  exactAlarmsAllowed: Boolean,
   onRefresh: () -> Unit,
   onSettings: () -> Unit,
   onAllowNotifications: () -> Unit,
+  onAllowExactAlarms: () -> Unit,
 ) {
   val settings = state.settings ?: return
   val cache = state.cache
@@ -97,10 +99,23 @@ fun HomeScreen(
         }
       }
 
+      if (settings.remind && notificationsAllowed && !exactAlarmsAllowed) {
+        Card {
+          Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Get the reminder on time", fontWeight = FontWeight.SemiBold)
+            Text(
+              "If your phone is idle at ${settings.reminderTime}, Android may hold the reminder back by up to an hour. " +
+                "Allowing \"Alarms & reminders\" for Bin Day makes it arrive on time.",
+            )
+            OutlinedButton(onClick = onAllowExactAlarms) { Text("Allow alarms & reminders") }
+          }
+        }
+      }
+
       if (cache.error != null && cache.uprn == settings.uprn) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
           Text(
-            if (schedule != null) "Couldn't update from the council just now, so these are the last dates fetched. ${cache.error}"
+            if (schedule != null) "${cache.error} Showing the dates from the last successful update."
             else cache.error,
             Modifier.padding(16.dp),
           )
